@@ -21,10 +21,6 @@ class SecurityPipeline:
         self.files_dir = "./files"
         self.results_file = "./scan_results.json"
 
-        if not self.api_key:
-            print("[!] ERROR: VT_API_KEY not set in .env")
-            sys.exit(1)
-
         # Create directories
         os.makedirs(self.books_dir, exist_ok=True)
         os.makedirs(self.files_dir, exist_ok=True)
@@ -38,10 +34,11 @@ class SecurityPipeline:
         print("\n" + "="*60)
         print("FILE SECURITY SCANNER")
         print("="*60)
-        print("\n1. Scan files (recursive)")
-        print("2. Organize files")
-        print("3. View results")
-        print("4. Exit\n")
+        print("\n  1. Scan files recursively")
+        print("  2. Organize files by risk")
+        print("  3. View scan results")
+        print("  4. Exit\n")
+        print("="*60)
 
     def option_scan(self):
         """Scan files recursively."""
@@ -107,7 +104,7 @@ class SecurityPipeline:
         """Main loop."""
         while True:
             self.show_menu()
-            choice = input("Enter choice (1-4): ").strip()
+            choice = input("\nEnter choice (1-4): ").strip()
 
             if choice == "1":
                 self.option_scan()
@@ -116,10 +113,10 @@ class SecurityPipeline:
             elif choice == "3":
                 self.option_results()
             elif choice == "4":
-                print("[+] Goodbye!")
+                print("\n[+] Goodbye!\n")
                 sys.exit(0)
             else:
-                print("[!] Invalid choice")
+                print("[!] Invalid choice. Please try again.")
 
 
 def main():

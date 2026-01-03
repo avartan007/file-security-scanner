@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+"""Route scanned files to safety folders."""
+
 import os
 import json
 import shutil
-import argparse
 
 
 class FileRouter:
@@ -30,63 +32,26 @@ class FileRouter:
         suspicious = 0
 
         for result in results:
-            # Support both old format and new format
             file_path = result.get("file")
             filename = result.get("filename", os.path.basename(file_path))
             risk = result.get("risk_level", "CLEAN")
 
-            # Try to find file (check if it's full path first)
-            src = None
-            if os.path.exists(file_path):
-                src = file_path
-            elif os.path.exists(os.path.join(self.books_dir, filename)):
-                src = os.path.join(self.books_dir, filename)
-
-            if not src:
-                print(f"  [!] File not found: {filename}")
+            if not os.path.exists(file_path):
                 continue
 
             if risk == "CLEAN":
                 dst = os.path.join(self.approved_dir, filename)
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
-                shutil.move(src, dst)
-                print(f"✅ {filename}")
+                shutil.copy2(file_path, dst)
+                print(f"  ✅ {filename}")
                 approved += 1
             else:
                 dst = os.path.join(self.suspicious_dir, filename)
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
-                shutil.move(src, dst)
-                print(f"⚠️  {filename}")
+                shutil.copy2(file_path, dst)
+                print(f"  ⚠️  {filename}")
                 suspicious += 1
 
-        print(f"\n[+] Complete: {approved} safe, {suspicious} suspicious\n")
+        print(f"\n[+] Organized {approved + suspicious} files")
+        print(f"    Approved:   {approved}")
+        print(f"    Suspicious: {suspicious}\n")
+
         return approved, suspicious
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Route scanned files to appropriate folders"
-    )
-    parser.add_argument(
-        "-r", "--results",
-        default="./scan_results.json",
-        help="Scan results file"
-    )
-    parser.add_argument(
-        "-d", "--directory",
-        default="./books",
-        help="Source directory"
-    )
-    parser.add_argument(
-        "-b", "--base",
-        default="./files",
-        help="Base routing directory"
-    )
-    args = parser.parse_args()
-
-    router = FileRouter(args.directory, args.base)
-    router.organize(args.results)
-
-
-if __name__ == "__main__":
-    main()

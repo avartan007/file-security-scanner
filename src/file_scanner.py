@@ -12,6 +12,7 @@ import hashlib
 import os
 import zipfile
 from pathlib import Path
+import sys
 
 # Basic configuration
 MAX_FILE_SIZE_MB = 32
@@ -127,7 +128,15 @@ class FileScanner:
         else:
             files = [f for f in p.glob("*") if f.is_file()]
 
-        for f in files:
+        if not files:
+            print("No files found to scan.")
+            return self.scan_results
+
+        print(f"\n[*] Scanning {len(files)} file(s)...\n")
+        for i, f in enumerate(files, 1):
+            pct = int(100 * i / len(files))
+            sys.stdout.write(f"\r[{pct:3d}%] {i}/{len(files)}")
+            sys.stdout.flush()
             res = self.analyze_file(str(f))
             if (
                 self.auto_extract_archives
@@ -137,7 +146,28 @@ class FileScanner:
                 dest = str(Path(directory) / (Path(f).stem + "_extracted"))
                 _ = self.extract_zip(str(f), dest)
 
+        print("\n")
+        self._print_summary()
         return self.scan_results
+
+    def _print_summary(self):
+        """Print scan summary stats."""
+        if not self.scan_results:
+            return
+        clean = sum(1 for r in self.scan_results
+                    if r.get("risk_level") == "CLEAN")
+        suspicious = sum(1 for r in self.scan_results
+                         if r.get("risk_level") == "SUSPICIOUS")
+        skipped = sum(1 for r in self.scan_results
+                      if r.get("status") == "SKIPPED")
+        print(f"\n{'='*50}")
+        print("SCAN SUMMARY")
+        print(f"{'='*50}")
+        print(f"Total scanned: {len(self.scan_results)}")
+        print(f"  Clean:      {clean}")
+        print(f"  Suspicious: {suspicious}")
+        print(f"  Skipped:    {skipped}")
+        print(f"{'='*50}\n")
 
     def save_results(self, out_file):
         os.makedirs(os.path.dirname(out_file) or ".", exist_ok=True)
